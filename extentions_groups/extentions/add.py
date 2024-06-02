@@ -5,8 +5,12 @@ from assets import get_free_categories
 from bot import bot
 
 
-with open('accepted_roles.json', 'r', encoding='utf-8') as f:
-        accepted_roles = json.load(f)
+# with open('accepted_roles.json', 'r', encoding='utf-8') as f:
+#         accepted_roles = json.load(f)
+
+accepted_roles = {
+      
+}
 
 
 @commands.slash_command(name='добавить', description='Добавить новую франшизу')
