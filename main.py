@@ -9,8 +9,25 @@ cur.execute('''
         management_channel_id INTEGER
     )
 ''')
+
+cur.execute('''
+    CREATE TABLE IF NOT EXISTS partners (
+        id INTEGER,
+        franchise_name STRING PRIMARY KEY
+    )
+''')
+
 for i in os.listdir('extentions_groups'):
     if i.endswith('.py'):
-        bot.load_extension(f'extentions_groups.{i.removesuffix('.py')}')
+        name = i.removesuffix('.py')
+        print(f'Loading extention {name}...')
+        bot.load_extension(f'extentions_groups.{name}')
+        
+
+for i in os.listdir('events'):
+    if i.endswith('.py'):
+        name = i.removesuffix('.py')
+        print(f'Loading event {name}...')
+        bot.load_extension(f'events.{i.removesuffix('.py')}')
 
 bot.run(config.TOKEN)

@@ -5,14 +5,11 @@ from assets import get_free_categories
 from bot import bot
 
 
-# with open('accepted_roles.json', 'r', encoding='utf-8') as f:
-#         accepted_roles = json.load(f)
-
-accepted_roles = {
-      
-}
+with open('accepted_roles.json', 'r', encoding='utf-8') as f:
+        accepted_roles = json.load(f)
 
 
+@commands.has_role(config.CAN_USE_BOT_ROLE_ID)
 @commands.slash_command(name='добавить', description='Добавить новую франшизу')
 @discord.commands.option('город', str, description='Напишите название города франшизы',
         required=True, parameter_name='city_name')
@@ -27,13 +24,23 @@ async def add_franchise(
         city_name,
         is_cis,
         create_channels):
+    cur.execute(f'SELECT name FROM franchises WHERE name = (?)', (city_name,))
+    if cur.fetchone():
+          await ctx.respond('❌ Франшиза с таким именем уже существует', ephemeral=True)
+          return
+    
     channel_ids = [-1, -1]
+
     if create_channels:
+        guild: discord.Guild = bot.get_guild(config.SERVER_ID)
+
+        if len(guild.channels) > 500 - 2:
+              await ctx.respond('❌ Достикнуто максимальное количество каналов на сервере', ephemeral=True)
+              return
+        
         region = ['EN', 'RU'][is_cis]
         names = [f'TECHNICAL {region}', f'MANAGEMENT {region}']
         categories = await get_free_categories(names)
-
-        guild: discord.Guild = bot.get_guild(config.SERVER_ID)
 
         for index, (category, name) in enumerate(zip(categories, ['TECHNICAL', 'MANAGEMENT'])):
                 overwrites = {
@@ -41,9 +48,8 @@ async def add_franchise(
                                 view_channel=True, send_messages=True
                         ) for i in accepted_roles[region][name]
                 }
-                overwrites[guild.default_role] = discord.PermissionOverwrite(
-                        view_channel=False
-                )
+                overwrites[guild.default_role] = discord.PermissionOverwrite(view_channel=False)
+                
                 channel = await guild.create_text_channel(
                         name=city_name,
                         overwrites=overwrites,

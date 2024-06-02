@@ -7,7 +7,7 @@ franchises = discord.SlashCommandGroup(
 )
 
 for filename in os.listdir('extentions_groups/extentions'):
-    if filename.endswith('.py'):
+    if filename.endswith('.py') and filename.startswith('franchises_'):
         module = __import__(f'extentions_groups.extentions.{filename.removesuffix(".py")}', fromlist=['setup'])
         module.setup(franchises)
 

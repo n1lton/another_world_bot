@@ -7,3 +7,8 @@ bot = commands.Bot(
     intents=discord.Intents.all(),
     debug_guilds=[1246394608972206143]
 )
+
+
+@bot.event
+async def on_ready():
+    print('Bot is running.')
