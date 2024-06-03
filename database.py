@@ -15,8 +15,7 @@ class Channel(Base):
 
     id = Column(Integer, primary_key=True)
     type = Column(String)
-    region = Column(String)
-    franchise_name = relationship(Integer, ForeignKey('franchises.name', ondelete='CASCADE'))
+    franchise_name = Column(Integer, ForeignKey('franchises.name', ondelete='CASCADE'))
     franchise = relationship('Franchise', back_populates='channels')
 
 
@@ -24,6 +23,7 @@ class Franchise(Base):
     __tablename__ = 'franchises'
 
     name = Column(String, primary_key=True)
+    region = Column(String)
     channels = relationship('Channel', back_populates='franchise', cascade='all, delete', passive_deletes=True)
     partners = relationship('Partner', back_populates='franchise', cascade='all, delete', passive_deletes=True)
 

@@ -1,12 +1,12 @@
 import discord, config, json
-from database import cur
+from database import db, Franchise, Channel
 from discord.ext import commands
 from assets import get_free_categories
 from bot import bot
 
 
 with open('accepted_roles.json', 'r', encoding='utf-8') as f:
-        accepted_roles = json.load(f)
+    accepted_roles = json.load(f)
 
 
 @commands.has_role(config.CAN_USE_BOT_ROLE_ID)
@@ -21,47 +21,49 @@ with open('accepted_roles.json', 'r', encoding='utf-8') as f:
         required=True, parameter_name='create_channels', choices=['True', 'False'])
 async def add_franchise(
         ctx: discord.ApplicationContext,
-        city_name,
+        city_name: str,
         is_cis,
         create_channels):
-    cur.execute(f'SELECT name FROM franchises WHERE name = (?)', (city_name,))
-    if cur.fetchone():
-          await ctx.respond('❌ Франшиза с таким именем уже существует', ephemeral=True)
-          return
-    
-    channel_ids = [-1, -1]
+        
+    city_name = city_name.capitalize()
+    if db.query(Franchise).filter(Franchise.name == city_name).all():
+        await ctx.respond('❌ Франшиза с таким именем уже существует', ephemeral=True)
+        return
 
     if create_channels:
+        channels = []
         guild: discord.Guild = bot.get_guild(config.SERVER_ID)
 
         if len(guild.channels) > 500 - 2:
-              await ctx.respond('❌ Достикнуто максимальное количество каналов на сервере', ephemeral=True)
-              return
-        
+            await ctx.respond('❌ Достикнуто максимальное количество каналов на сервере', ephemeral=True)
+            return
+
         region = ['EN', 'RU'][is_cis]
         names = [f'TECHNICAL {region}', f'MANAGEMENT {region}']
         categories = await get_free_categories(names)
 
-        for index, (category, name) in enumerate(zip(categories, ['TECHNICAL', 'MANAGEMENT'])):
-                overwrites = {
-                        guild.get_role(i): discord.PermissionOverwrite(
-                                view_channel=True, send_messages=True
-                        ) for i in accepted_roles[region][name]
-                }
-                overwrites[guild.default_role] = discord.PermissionOverwrite(view_channel=False)
-                
-                channel = await guild.create_text_channel(
-                        name=city_name,
-                        overwrites=overwrites,
-                        category=category
-                )
+        for category, type in zip(categories, ['TECHNICAL', 'MANAGEMENT']):
+            overwrites = {
+                guild.get_role(i): discord.PermissionOverwrite(
+                        view_channel=True, send_messages=True
+                ) for i in accepted_roles[region][type]
+            }
+            overwrites[guild.default_role] = discord.PermissionOverwrite(view_channel=False)
+            
+            channel = await guild.create_text_channel(
+                name=city_name,
+                overwrites=overwrites,
+                category=category
+            )
 
-                channel_ids[index] = channel.id
-        
-        cur.execute(f'INSERT INTO franchises VALUES (?, ?, ?)', (city_name, *channel_ids))
-        await ctx.respond('✅ Франшиза создана', ephemeral=True)
+            channels.append(Channel(id=channel.id, type=type))
+    
+    franchise = Franchise(name=city_name, channels=channels, region=region)
+    db.add(franchise)
+    db.commit()
+    await ctx.respond('✅ Франшиза создана', ephemeral=True)
 
 
 def setup(group: discord.SlashCommandGroup):
-      add_franchise.parent = group
-      group.add_command(add_franchise)
+    add_franchise.parent = group
+    group.add_command(add_franchise)

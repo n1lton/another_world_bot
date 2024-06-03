@@ -1,27 +1,12 @@
 import config, os
 from bot import bot
-from database import cur
+from database import Session
 
-cur.execute('''
-    CREATE TABLE IF NOT EXISTS franchises (
-        name STRING PRIMATY KEY,
-        technical_channel_id INTEGER,
-        management_channel_id INTEGER
-    )
-''')
-
-cur.execute('''
-    CREATE TABLE IF NOT EXISTS partners (
-        id INTEGER,
-        franchise_name STRING PRIMARY KEY
-    )
-''')
-
-for i in os.listdir('extentions_groups'):
+for i in os.listdir('extention_groups'):
     if i.endswith('.py'):
         name = i.removesuffix('.py')
         print(f'Loading extention {name}...')
-        bot.load_extension(f'extentions_groups.{name}')
+        bot.load_extension(f'extention_groups.{name}')
         
 
 for i in os.listdir('events'):

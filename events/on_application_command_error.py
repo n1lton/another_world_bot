@@ -12,7 +12,7 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
         await ctx.respond(
             embed=discord.Embed(
                 title='Произошла ошибка!',
-                description=error.with_traceback(),
+                description=error,
                 color=0xFF0000
             ),
             ephemeral=True

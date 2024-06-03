@@ -1,12 +1,12 @@
 import discord, config
 from discord.ext import commands
-from database import cur
+from database import db, Franchise, Partner, Channel
 from bot import bot
 
 
 def get_cities(ctx: discord.AutocompleteContext):
-    data = cur.execute('SELECT name FROM franchises').fetchall()
-    return [i[0] for i in data if i[0].startswith(ctx.value.lower())]
+    data = db.query(Franchise).all()
+    return [i.name for i in data if i.name.startswith(ctx.value.lower())]
 
 @commands.has_role(config.CAN_USE_BOT_ROLE_ID)
 @commands.slash_command(name='удалить', description='Удалить существующую франшизу')
@@ -20,30 +20,25 @@ async def delete_franchise(ctx: discord.ApplicationContext, city_name, delete_pa
     guild = bot.get_guild(config.SERVER_ID)
 
     if delete_partner:
-        cur.execute('SELECT id FROM partners WHERE franchise_name = (?)', (city_name,))
-        data = cur.fetchone()
-        if data:
-            member = guild.get_member(data[0])
+        data = db.query(Partner).filter(Partner.franchise_name == city_name).all()
+        for partner in data:
+            member = guild.get_member(partner.id)
             await member.ban(reason=f'Удаление франшизы {city_name}')
-            cur.execute('DELETE FROM partners WHERE franchise_name = (?)', (city_name,))
 
-    cur.execute(
-        'SELECT technical_channel_id, management_channel_id FROM franchises WHERE name = (?)',
-        (city_name,)
-    )
-    channel_ids = cur.fetchone()
-    for channel_id in channel_ids:
-        if channel_id == -1:
+    franchise = db.query(Franchise).filter(Franchise.name == city_name).first()
+    for channel in franchise.channels:
+        if channel == -1:
             continue
 
-        channel = guild.get_channel(channel_id)
-        
-        if channel.category and len(channel.category.channels) == 1:
-            await channel.category.delete(reason=f'Удаление франшизы {city_name}')
+        discord_channel = guild.get_channel(channel.id)
 
-        await channel.delete(reason=f'Удаление франшизы {city_name}')
+        if discord_channel.category and len(discord_channel.category.channels) == 1:
+            await discord_channel.category.delete(reason=f'Удаление франшизы {city_name}')
 
-    cur.execute('DELETE FROM franchises WHERE name = (?)', (city_name,))
+        await discord_channel.delete(reason=f'Удаление франшизы {city_name}')
+
+    db.delete(franchise)
+    db.commit()
 
     await ctx.respond('✅ Франшиза удалена', ephemeral=True)
 
