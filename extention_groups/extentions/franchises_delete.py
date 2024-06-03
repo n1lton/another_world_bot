@@ -8,6 +8,7 @@ def get_cities(ctx: discord.AutocompleteContext):
     data = db.query(Franchise).all()
     return [i.name for i in data if i.name.startswith(ctx.value.lower())]
 
+
 @commands.has_role(config.CAN_USE_BOT_ROLE_ID)
 @commands.slash_command(name='удалить', description='Удалить существующую франшизу')
 @discord.commands.option('найти-город', str,
