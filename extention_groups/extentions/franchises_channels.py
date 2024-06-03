@@ -1,7 +1,7 @@
 import discord, config
 from discord.ext import commands
 from database import db, Franchise, Channel
-from assets import get_free_categories
+from assets import get_free_categories, get_franchises
 from bot import bot
 
 
@@ -10,22 +10,17 @@ channels_group = discord.SlashCommandGroup(
     description='Группа подкоманд для управления каналами франшизы'
 )
 
-
-def get_franchises(ctx: discord.AutocompleteContext):
-    return [i.name for i in db.query(Franchise).all() if i.name.startswith(ctx.value.lower())]
-
-
 @commands.has_role(config.CAN_USE_BOT_ROLE_ID)
-@channels_group.command(name='добавить', description='Добавить новый канал в существующую франшизу')
-@discord.commands.option('канал', discord.TextChannel,
-        description='Выберите канал, который вы хотите удалить из франшизы',
-        required=True, parameter_name='channel')
-@discord.commands.option('франшиза', str,
-        description='Выберите существующую франшизу, в которую вы хотите добавить канал',
-        required=True, parameter_name='franchise_name', autocomplete=get_franchises)
-@discord.commands.option('тип', str,
-        description='Выберите тип канала, который вы хотите добавить в франшизу',
-        required=True, parameter_name='channel_type', choices=['MANAGEMENT', 'TECHNICAL'])
+@channels_group.command(name='добавить',
+        description='Добавить новый канал в существующую франшизу')
+@discord.commands.option('канал', discord.TextChannel, required=True, parameter_name='channel',
+        description='Выберите канал, который вы хотите удалить из франшизы')
+@discord.commands.option('франшиза', str, required=True,
+        parameter_name='franchise_name', autocomplete=get_franchises,
+        description='Выберите существующую франшизу, в которую вы хотите добавить канал')
+@discord.commands.option('тип', str, required=True,
+        parameter_name='channel_type',choices=['MANAGEMENT', 'TECHNICAL'],
+        description='Выберите тип канала, который вы хотите добавить в франшизу')
 async def franchises_add_channel(
         ctx: discord.ApplicationContext,
         discord_channel: discord.TextChannel,

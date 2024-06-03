@@ -1,5 +1,6 @@
 import discord, config
 from bot import bot
+from database import db, Franchise
 
 
 async def get_free_categories(names: list[str]) -> list[discord.CategoryChannel]:
@@ -26,3 +27,7 @@ async def get_free_categories(names: list[str]) -> list[discord.CategoryChannel]
             )
 
     return tuple(result[name] for name in names)
+
+
+def get_franchises(ctx: discord.AutocompleteContext):
+    return [i.name for i in db.query(Franchise).all() if i.name.startswith(ctx.value.lower())]

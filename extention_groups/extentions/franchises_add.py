@@ -11,14 +11,14 @@ with open('accepted_roles.json', 'r', encoding='utf-8') as f:
 
 @commands.has_role(config.CAN_USE_BOT_ROLE_ID)
 @commands.slash_command(name='добавить', description='Добавить новую франшизу')
-@discord.commands.option('город', str, description='Напишите название города франшизы',
-        required=True, parameter_name='city_name')
-@discord.commands.option('регион-снг', bool,
-        description='Установите значение True для региона СНГ или False для остального мира',
-        required=True, parameter_name='is_cis', choices=['True', 'False'])
-@discord.commands.option('каналы', str,
-        description='Установите значение True, если необходимо создать стандартные каналы (менеджемент и технический)',
-        required=True, parameter_name='create_channels', choices=['True', 'False'])
+@discord.commands.option('город', str, required=True, parameter_name='city_name',
+        description='Напишите название города франшизы',)
+@discord.commands.option('регион-снг', bool, required=True,
+        parameter_name='is_cis', choices=['True', 'False'],
+        description='Установите значение True для региона СНГ или False для остального мира')
+@discord.commands.option('каналы', str, required=True,
+        parameter_name='create_channels', choices=['True', 'False'],
+        description='Установите значение True, если необходимо создать стандартные каналы (менеджемент и технический)')
 async def add_franchise(
         ctx: discord.ApplicationContext,
         city_name: str,
