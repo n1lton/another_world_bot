@@ -1,6 +1,6 @@
 from models.User import User
 from models.Franchise import Franchise
-from models.Channel import Channel
+from assets import get_franchises_by_user
 import discord, config
 from discord.ext import commands
 from database import db
@@ -18,7 +18,7 @@ users_group = discord.SlashCommandGroup(
 @users_group.command(
         name='добавить',
         description='Добавить нового пользователя в существующую франшизу')
-@discord.option('пользователь', discord.Member, required=True, parameter_name='discord',
+@discord.option('пользователь', discord.Member, required=True, parameter_name='discord_user',
         description='Выберите пользователя, которого хотите добавить во франшизу')
 @discord.option('франшиза', str, required=True, parameter_name='franchise_name', autocomplete=get_franchises,
         description='Выберите существующую франшизу, в которую вы хотите добавить пользователя')
@@ -73,8 +73,39 @@ async def users_add(ctx: discord.ApplicationContext, discord_user: discord.Membe
     )
 
 
+# при изменении параметра name у опции discord_user изменить assets.get_franchises_by_user
+@commands.has_role(config.CAN_USE_BOT_ROLE_ID)
+@users_group.command(name='удалить', description='Удалить пользователя из франшизы')
+@discord.option('пользователь', discord.Member, required=True, parameter_name='discord_user',
+        description='Выберите пользователя, которого хотите удалить из франшизы')
+@discord.commands.option('выгнать', bool, required=True,
+        parameter_name='ban', choices=['True', 'False'],
+        description='Выберите значение true, если хотите выгнать партнёра с сервера')
+@discord.commands.option('франшиза', str, required=True,
+        parameter_name='franchise_name', autocomplete=get_franchises_by_user,
+        description='Выберите франшизу, из которой необходимо удалить пользователя')
+async def remove_user(ctx: discord.ApplicationContext, discord_user: discord.Member, franchise_name, ban):
+    user = db.query(User).filter(User.id == discord_user.id).first()
+    if not user:
+        await ctx.respond('❌ Пользователь не найден', ephemeral=True)
+        return
+    
+    if ban:
+        db.delete(user)
+        await discord_user.kick(reason='Команда /франшизы каналы удалить')
 
+    else:
+        franchise = db.query(Franchise).filter(Franchise.name == franchise_name).first()
+        franchise.users.remove(user)
+        for channel in franchise.channels:
+            discord_channel = bot.get_channel(channel.id)
+            await discord_channel.set_permissions(
+                discord_user,
+                overwrite=discord.PermissionOverwrite()
+            )
 
+    db.commit()
+    await ctx.respond('✅ Пользователь удалён', ephemeral=True)
 
 
 def setup(group: discord.SlashCommandGroup):

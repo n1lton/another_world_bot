@@ -1,4 +1,6 @@
 from models.Franchise import Franchise
+from models.User import User
+from models.Group import Group
 import discord, config
 from bot import bot
 from database import db
@@ -32,3 +34,16 @@ async def get_free_categories(names: list[str]) -> list[discord.CategoryChannel]
 
 def get_franchises(ctx: discord.AutocompleteContext):
     return [i.name for i in db.query(Franchise).all() if i.name.startswith(ctx.value.lower())]
+
+
+def get_franchises_by_user(ctx: discord.AutocompleteContext):
+    discord_user = ctx.options['пользователь']
+    user = db.query(User).filter(User.id == discord_user).first()
+    return [
+        i.name for i in db.query(Franchise).filter(Franchise.users.contains(user)).all() \
+        if i.name.startswith(ctx.value.lower())
+    ]
+
+
+def get_groups(ctx: discord.AutocompleteContext):
+    return [i.name for i in db.query(Group).all() if i.name.startswith(ctx.value.lower())]
