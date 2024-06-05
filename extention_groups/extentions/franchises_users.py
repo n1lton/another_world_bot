@@ -1,6 +1,9 @@
+from models.User import User
+from models.Franchise import Franchise
+from models.Channel import Channel
 import discord, config
 from discord.ext import commands
-from database import db, Franchise, Channel, User
+from database import db
 from assets import get_franchises
 from bot import bot
 
@@ -15,7 +18,7 @@ users_group = discord.SlashCommandGroup(
 @users_group.command(
         name='добавить',
         description='Добавить нового пользователя в существующую франшизу')
-@discord.option('пользователь', discord.Member, required=True, parameter_name='user',
+@discord.option('пользователь', discord.Member, required=True, parameter_name='discord',
         description='Выберите пользователя, которого хотите добавить во франшизу')
 @discord.option('франшиза', str, required=True, parameter_name='franchise_name', autocomplete=get_franchises,
         description='Выберите существующую франшизу, в которую вы хотите добавить пользователя')
@@ -28,19 +31,31 @@ users_group = discord.SlashCommandGroup(
 @discord.commands.option('management', bool, required=False,
         parameter_name='management', choices=['True', 'False'],
         description='Выберите значение true, если хотите выдать доступ к каналу менеджемента')
-async def users_add(ctx: discord.ApplicationContext, user: discord.Member,
+async def users_add(ctx: discord.ApplicationContext, discord_user: discord.Member,
         franchise_name: str, lang: str, technical: bool, management: bool):
     franchise = db.query(Franchise).filter(Franchise.name == franchise_name).first()
-    franchise.users.append(User(id=user.id))
+
+    user = db.query(User).filter(User.id == discord_user.id).first()
+    if not user:
+        user = User(id=discord_user.id)
+
+    if user in franchise.users:
+        await ctx.respond(
+            f'❌ Пользователь {discord_user.mention} уже есть во франшизе {franchise_name}',
+            ephemeral=True
+        )
+        return
+    
+    franchise.users.append(user)
 
     role = bot.get_guild(config.SERVER_ID).get_role(config.ROLES[lang]['lang_role'])
-    await user.add_roles(role)
+    await discord_user.add_roles(role)
 
     for channel in franchise.channels:
         if (channel.type == 'MANAGEMENT' and management) or (channel.type == 'TECHNICAL' and technical):
             discord_channel =  bot.get_channel(channel.id)
             await discord_channel.set_permissions(
-                user,
+                discord_user,
                 overwrite=discord.PermissionOverwrite(
                     view_channel=True,
                     send_messages=True,
@@ -49,7 +64,13 @@ async def users_add(ctx: discord.ApplicationContext, user: discord.Member,
                     embed_links=True
                 )
             )
+
     db.commit()
+
+    await ctx.respond(
+        f'✅ Пользователь {discord_user.mention} добавлен во франшизу {franchise_name}',
+        ephemeral=True
+    )
 
 
 

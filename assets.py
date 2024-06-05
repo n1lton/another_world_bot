@@ -1,6 +1,7 @@
+from models.Franchise import Franchise
 import discord, config
 from bot import bot
-from database import db, Franchise
+from database import db
 
 
 async def get_free_categories(names: list[str]) -> list[discord.CategoryChannel]:

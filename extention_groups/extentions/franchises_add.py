@@ -1,5 +1,7 @@
+from models.Franchise import Franchise
+from models.Channel import Channel
 import discord, config, json
-from database import db, Franchise, Channel
+from database import db
 from discord.ext import commands
 from assets import get_free_categories
 from bot import bot
@@ -58,7 +60,7 @@ async def add_franchise(
 
             channels.append(Channel(id=channel.id, type=type))
     
-    franchise = Franchise(name=city_name, channels=channels, region=region)
+    franchise = Franchise(name=city_name, channels=channels)
     db.add(franchise)
     db.commit()
     await ctx.respond('✅ Франшиза создана', ephemeral=True)
