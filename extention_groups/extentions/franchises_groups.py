@@ -69,7 +69,7 @@ def get_text(groups, mention=False):
 async def print_groups(ctx: discord.ApplicationContext):
     groups = db.query(Group).all()
     text = get_text(groups, mention=True)
-    text = 'сво' * 2000
+
     if len(text) > 2000:
         with open('buffer.txt', 'w', encoding='utf-8') as f:
             f.write(get_text(groups, mention=False))
