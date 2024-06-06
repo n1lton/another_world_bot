@@ -1,6 +1,5 @@
 import config, os
 from bot import bot
-from database import Session
 
 for i in os.listdir('extention_groups'):
     if i.endswith('.py'):

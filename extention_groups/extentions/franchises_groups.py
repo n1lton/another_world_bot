@@ -1,11 +1,10 @@
+from autocomplete import get_free_groups, get_occupied_channels, get_groups, get_channels_by_group
 import discord, config
 from discord.ext import commands
 from database import db
 from models.Group import Group
 from models.User import User
 from models.Channel import Channel
-from assets import get_groups
-import time
 
 
 users_group = discord.SlashCommandGroup(
@@ -15,7 +14,7 @@ users_group = discord.SlashCommandGroup(
 
 
 @commands.has_role(config.CAN_USE_BOT_ROLE_ID)
-@users_group.command(name='создать', descriprion='Создать новую пользовательскую группу')
+@users_group.command(name='создать', description='Создать новую пользовательскую группу')
 @discord.commands.option('название-группы', str, required=True, parameter_name='group_name',
         description='Введите название для новой группы')
 async def create_group(ctx: discord.ApplicationContext, group_name: str):
@@ -32,7 +31,7 @@ async def create_group(ctx: discord.ApplicationContext, group_name: str):
 
 
 @commands.has_role(config.CAN_USE_BOT_ROLE_ID)
-@users_group.command(name='удалить', descriprion='Удалить существующую группу пользователей')
+@users_group.command(name='удалить', description='Удалить существующую группу пользователей')
 @discord.commands.option('название-группы', str, required=True,
         parameter_name='group_name', autocomplete=get_groups,
         description='Введите название удаляемой группы')
@@ -49,9 +48,9 @@ def get_text(groups, mention=False):
 
         for channel in group.channels:
             if mention:
-                text += f'- <#{channel}>'
+                text += f'- <#{channel.id}> {channel.type}\n'
             else:
-                text += f'- {channel.name} (id: {channel.id})\n'
+                text += f'- {channel.name} {channel.type} (id: {channel.id})\n'
 
         if not group.channels:
             text += '- Каналы отсутствуют\n'
@@ -78,12 +77,40 @@ async def print_groups(ctx: discord.ApplicationContext):
 
     else:
         await ctx.respond(text, ephemeral=True)
-    
-    
 
 
+@commands.has_role(config.CAN_USE_BOT_ROLE_ID)
+@users_group.command(name='добавить-канал', description='Добавить канал в группу')
+@discord.commands.option('канал', str, required=True,
+        parameter_name='channel_id', autocomplete=get_occupied_channels,
+        description='Выберите канал')
+@discord.commands.option('название-группы', str, required=True,
+        parameter_name='group_name', autocomplete=get_free_groups,
+        description='Введите название группы, в которую необходимо добавить канал')
+async def add_channel_to_group(ctx: discord.ApplicationContext, channel_id: str, group_name: str):
+    channel = db.query(Channel).filter(Channel.id == channel_id).first()
+    group = db.query(Group).filter(Group.name == group_name).first()
+    group.channels.append(channel)
+    db.commit()
+
+    await ctx.respond('✅ Канал добавлен в группу', ephemeral=True)
 
 
+@commands.has_role(config.CAN_USE_BOT_ROLE_ID)
+@users_group.command(name='удалить-канал', description='Удалить выбранный канал из выбранной группы')
+@discord.commands.option('название-группы', str, required=True,
+        parameter_name='group_name', autocomplete=get_groups,
+        description='Введите название группы, из которой необходимо удалить канал')
+@discord.commands.option('канал', str, required=True,
+        parameter_name='channel_id', autocomplete=get_channels_by_group,
+        description='Выберите канал')
+async def delete_channel_from_group(ctx: discord.ApplicationContext, group_name: str, channel_id: str):
+    channel = db.query(Channel).filter(Channel.id == channel_id).first()
+    group = db.query(Group).filter(Group.name == group_name).first()
+    group.channels.remove(channel)
+    db.commit()
+
+    await ctx.respond('✅ Канал удалён из группы', ephemeral=True)
 
 
 def setup(category: discord.SlashCommandGroup):

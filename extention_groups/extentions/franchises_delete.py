@@ -1,9 +1,11 @@
+from models.User import User
 from models.Franchise import Franchise
+from models.Channel import Channel
 import discord, config
 from discord.ext import commands
 from database import db
 from bot import bot
-from assets import get_franchises
+from autocomplete import get_franchises
 
 
 @commands.has_role(config.CAN_USE_BOT_ROLE_ID)
@@ -21,7 +23,7 @@ async def delete_franchise(ctx: discord.ApplicationContext, franchise_name, dele
     if delete_users:
         for user in franchise.users:
             member = guild.get_member(user.id)
-            await member.kick(reason=f'Удаление франшизы {franchise_name}')
+            await member.ban(reason=f'Удаление франшизы {franchise_name}')
 
     for channel in franchise.channels:
         discord_channel = guild.get_channel(channel.id)

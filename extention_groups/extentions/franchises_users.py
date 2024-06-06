@@ -1,10 +1,10 @@
 from models.User import User
 from models.Franchise import Franchise
-from assets import get_franchises_by_user
+from autocomplete import get_franchises_by_user
 import discord, config
 from discord.ext import commands
 from database import db
-from assets import get_franchises
+from autocomplete import get_franchises
 from bot import bot
 
 
@@ -49,7 +49,8 @@ async def users_add(ctx: discord.ApplicationContext, discord_user: discord.Membe
     franchise.users.append(user)
 
     role = bot.get_guild(config.SERVER_ID).get_role(config.ROLES[lang]['lang_role'])
-    await discord_user.add_roles(role)
+    if role not in discord_user.roles:
+        await discord_user.add_roles(role)
 
     for channel in franchise.channels:
         if (channel.type == 'MANAGEMENT' and management) or (channel.type == 'TECHNICAL' and technical):
@@ -73,7 +74,6 @@ async def users_add(ctx: discord.ApplicationContext, discord_user: discord.Membe
     )
 
 
-# при изменении параметра name у опции discord_user изменить assets.get_franchises_by_user
 @commands.has_role(config.CAN_USE_BOT_ROLE_ID)
 @users_group.command(name='удалить', description='Удалить пользователя из франшизы')
 @discord.option('пользователь', discord.Member, required=True, parameter_name='discord_user',
