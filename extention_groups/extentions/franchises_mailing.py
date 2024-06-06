@@ -21,7 +21,7 @@ class InputMessage(discord.ui.Modal):
 
     
     async def callback(self, interaction: discord.Interaction):
-        await interaction.respond('✅ Сообщение отправлено')
+        await interaction.respond('✅ Сообщение отправлено', ephemeral=True)
         group = db.query(Group).filter(Group.name == self.group_name).first()
         for channel in group.channels:
             discord_channel = bot.get_channel(channel.id)
