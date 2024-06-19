@@ -47,7 +47,7 @@ def get_occupied_channels(ctx: discord.AutocompleteContext):
         if discord_channel.name.lower().startswith(ctx.value.lower()):
             result.append(
                 discord.OptionChoice(
-                    name=f'{discord_channel.name} {channel.type[0]}',
+                    name=f'{discord_channel.name} {channel.type}',
                     value=str(channel.id)
                 )
             )
@@ -66,7 +66,7 @@ def get_channels_by_group(ctx: discord.AutocompleteContext):
         if discord_channel.name.lower().startswith(ctx.value.lower()):
             result.append(
                 discord.OptionChoice(
-                    name=f'{discord_channel.name} {channel.type[0]}',
+                    name=f'{discord_channel.name} {channel.type}',
                     value=str(channel.id)
                 )
             )

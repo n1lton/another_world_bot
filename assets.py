@@ -3,26 +3,43 @@ from bot import bot
 
 
 async def get_free_categories(names: list[str]) -> list[discord.CategoryChannel]:
+    result = []
+    for name in names:
+        category = await get_free_category(name)
+        result.append(category)
+
+    return tuple(result)
+
+
+async def get_free_category(name: str):
     guild: discord.Guild = bot.get_guild(config.SERVER_ID)
-    result = {i: None for i in names}
-    categories_count = {i: 0 for i in names}
+    count = 0
+    result = None
 
     for category in guild.categories:
-        names_mask = [category.name.lower().startswith(i.lower()) for i in names]
-        if not any(names_mask):
+        if not category.name.lower().startswith(name.lower()):
             continue
 
-        name = names[names_mask.index(True)]
-        
+        count += 1
+
         if len(category.channels) < config.MAX_CHANNELS:
-            result[name] = category
+            result = category
+            break
 
-        categories_count[name] += 1
+    if result == None:
+        result = await guild.create_category(
+            name=f'{name}{" " + str(count + 1) if count != 0 else ""}',
+            position=get_max_position(name)
+        )
 
-    for k, v in result.items():
-        if v == None:
-            result[k] = await guild.create_category(
-                name=f'{k} {categories_count[k] + 1}'
-            )
+    return result
+            
 
-    return tuple(result[name] for name in names)
+def get_max_position(name: str):
+    guild: discord.Guild = bot.get_guild(config.SERVER_ID)
+    return max(
+        [
+            category.position for category in guild.categories \
+            if category.name.lower().startswith(name.lower())
+        ]
+    )

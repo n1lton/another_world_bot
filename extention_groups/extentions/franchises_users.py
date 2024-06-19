@@ -34,7 +34,10 @@ users_group = discord.SlashCommandGroup(
 async def users_add(ctx: discord.ApplicationContext, discord_user: discord.Member,
         franchise_name: str, lang: str, technical: bool, management: bool):
     franchise = db.query(Franchise).filter(Franchise.name == franchise_name).first()
-
+    if not franchise:
+        await ctx.respond('❌ Франшиза не найдена', ephemeral=True)
+        return
+    
     user = db.query(User).filter(User.id == discord_user.id).first()
     if not user:
         user = User(id=discord_user.id)
@@ -96,6 +99,10 @@ async def remove_user(ctx: discord.ApplicationContext, discord_user: discord.Mem
 
     else:
         franchise = db.query(Franchise).filter(Franchise.name == franchise_name).first()
+        if not franchise:
+            await ctx.respond('❌ Франшиза не найдена', ephemeral=True)
+            return
+        
         franchise.users.remove(user)
         for channel in franchise.channels:
             discord_channel = bot.get_channel(channel.id)
@@ -104,8 +111,8 @@ async def remove_user(ctx: discord.ApplicationContext, discord_user: discord.Mem
                 overwrite=discord.PermissionOverwrite()
             )
 
-    db.commit()
     await ctx.respond('✅ Пользователь удалён', ephemeral=True)
+    db.commit()
 
 
 def setup(group: discord.SlashCommandGroup):

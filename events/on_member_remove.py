@@ -4,10 +4,12 @@ from models.User import User
 
 
 async def on_member_remove(member: discord.Member):
-    db.query(User).filter(
+    user = db.query(User).filter(
         User.id == member.id
-    ).delete()
-    db.commit()
+    ).first()
+    if user:
+        db.delete(user)
+        db.commit()
 
 
 def setup(bot):

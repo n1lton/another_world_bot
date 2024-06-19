@@ -17,13 +17,17 @@ from autocomplete import get_franchises
         parameter_name='delete_users', choices=['True', 'False'],
         description='Установите значение True, если необходимо удалить партнёров с сервера',)
 async def delete_franchise(ctx: discord.ApplicationContext, franchise_name, delete_users):
-    guild = bot.get_guild(config.SERVER_ID)
     franchise = db.query(Franchise).filter(Franchise.name == franchise_name).first()
 
+    if not franchise:
+        await ctx.respond('❌ Франшиза не найдена', ephemeral=True)
+        return
+
+    guild = bot.get_guild(config.SERVER_ID)
     if delete_users:
         for user in franchise.users:
             member = guild.get_member(user.id)
-            await member.ban(reason=f'Удаление франшизы {franchise_name}')
+            await member.kick(reason=f'Удаление франшизы {franchise_name}')
 
     for channel in franchise.channels:
         discord_channel = guild.get_channel(channel.id)

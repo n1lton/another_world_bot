@@ -30,12 +30,17 @@ async def franchises_add_channel(
         franchise_name,
         channel_type):
     franchise = db.query(Franchise).filter(Franchise.name == franchise_name).first()
-    db.query(Channel).filter(
-        Channel.id == discord_channel.id
-    ).delete()
-    
-    channel = Channel(id=discord_channel.id, franchise=franchise, type=channel_type)
-    db.add(channel)
+    if not franchise:
+        await ctx.respond('❌ Франшиза не найдена', ephemeral=True)
+        return
+
+    channel = db.query(Channel).filter(Channel.id == discord_channel.id).first()
+    if channel:
+        channel.franchise = franchise
+        channel.type = channel_type
+    else:
+        channel = Channel(id=discord_channel.id, franchise=franchise, type=channel_type)
+        db.add(channel)
     db.commit()
 
     await ctx.respond(
@@ -59,19 +64,21 @@ async def franchises_remove_channel(
     channel = db.query(Channel).filter(
         Channel.id == channel_id,
     ).first()
+    if not channel:
+        await ctx.respond('❌ Канал не найден', ephemeral=True)
+        return
+    
+    db.delete(channel)
 
     discord_channel = bot.get_channel(channel.id)
-
-    if delete_channel:
+    if discord_channel and delete_channel:
         await discord_channel.delete(reason='Команда /франшизы каналы удалить')
 
-    db.delete(channel)
-    db.commit()
-
     await ctx.respond(
-        f'✅ Канал {discord_channel.name} успешно удалён',
+        f'✅ Канал успешно удалён',
         ephemeral=True
     )
+    db.commit()
 
 
 def setup(group: discord.SlashCommandGroup):
